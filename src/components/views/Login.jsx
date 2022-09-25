@@ -1,18 +1,27 @@
 import { Form, Input, Button, Row, Col, notification } from "antd";
+import axios from "axios";
 import { useNavigate } from "react-router";
 
 export default function Login() {
     const navigate = useNavigate();
+    let GET_USER = "https://demo2.z-bit.ee/users/get-token"
 
     const onFinish = (values) => {
         console.log('Success:', values);
-        notification.success({
-            message: 'Logged in'
-        });
-        notification.error({
-            message: 'Wrong username or password'
-        });
-        navigate("/");
+        axios.post(GET_USER,{username:values.username,password:values.password}).then(res=>{
+            if(res.status==200){
+                notification.success({
+                    message: 'Logged in'
+                });
+                console.log(res.data)
+                //navigate("/");
+            }
+        }).catch(err=>{
+            console.log(err)
+            notification.error({
+                message: 'Wrong username or password'
+            });
+        })
     };
 
     return (
