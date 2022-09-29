@@ -14,6 +14,7 @@ function Register() {
           notification.success({
             message:"Registration successful!"
           })
+          navigate("/login")
          }
        }).catch(err=>{
          notification.error({

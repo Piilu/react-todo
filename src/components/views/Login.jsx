@@ -1,8 +1,9 @@
 import { Form, Input, Button, Row, Col, notification } from "antd";
 import axios from "axios";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export default function Login() {
+export default function Login({checkAuth}) {
     const navigate = useNavigate();
     let GET_USER = "https://demo2.z-bit.ee/users/get-token"
 
@@ -13,8 +14,9 @@ export default function Login() {
                 notification.success({
                     message: 'Logged in'
                 });
-                console.log(res.data)
-                //navigate("/");
+                localStorage.setItem("accessKey",JSON.stringify(res.data))
+                checkAuth();
+                navigate("/");
             }
         }).catch(err=>{
             console.log(err)
@@ -49,7 +51,8 @@ export default function Login() {
                         <Input.Password />
                     </Form.Item>
                     <Form.Item>
-                        <Button type="primary" htmlType="submit">Login</Button>
+                        <Button type="primary" htmlType="submit">Login</Button> <br/>
+                        Or <a href="/register">register now!</a>
                     </Form.Item>
                 </Form>
             </Col>
