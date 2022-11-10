@@ -4,6 +4,7 @@ import axios from "axios";
 import produce from "immer";
 import { useEffect } from "react";
 import { useState } from "react";
+import { debounce } from "lodash"
 
 
 export default function TaskList({userAuth,checkAuth}) {
@@ -43,26 +44,28 @@ export default function TaskList({userAuth,checkAuth}) {
             draft[index].name = event.target.value;
         });
         setTasks(newTasks);
-        await axios.put(`${TASK_URL}/${task.id}`,{title:event.target.value,marked_as_done:task.completed},config).then(res=>{
-            //Kas siin üldse pean midagi tegema ?
-        }).catch(err=>{
-            console.log(err)
-            notification.error({
-                message:err.response.data[0].message
-            })
-        })
+        saveDebounce(task,event);
         
     };
 
+    const saveDebounce =  debounce(async (task,event) => {
+            console.log("DEBOUNCE")
+            await axios.put(`${TASK_URL}/${task.id}`,{title:event.target.value,marked_as_done:task.completed},config).catch(err=>{
+                console.log(err)
+                notification.error({
+                    message:err.response.data[0].message
+                })
+          });
+    },300)
+    
     const handleCompletedChange = async(task, event) => {
         const newTasks = produce(tasks, draft => {
             const index = draft.findIndex(t => t.id === task.id);
             draft[index].completed = event.target.checked;
         });
         setTasks(newTasks);
-        await axios.put(`${TASK_URL}/${task.id}`,{title:task.title,marked_as_done:event.target.checked},config).then(res=>{
-            //Kas siin üldse pean midagi tegema ?
-        }).catch(err=>{
+        
+        await axios.put(`${TASK_URL}/${task.id}`,{title:task.title,marked_as_done:event.target.checked},config).catch(err=>{
             console.log(err)
             notification.error({
                 message:err.response.data[0].message
