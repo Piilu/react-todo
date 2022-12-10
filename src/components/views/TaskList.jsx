@@ -2,28 +2,27 @@ import { DeleteOutlined } from "@ant-design/icons";
 import { Input, Button, Checkbox, List, Col, Row, Space, Divider, notification } from "antd";
 import axios from "axios";
 import produce from "immer";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { debounce } from "lodash"
 
 
-export default function TaskList({userAuth,checkAuth}) {
+export default function TaskList({ userAuth, checkAuth }) {
     const TASK_URL = "https://demo2.z-bit.ee/tasks";
     const config = {
         headers: { Authorization: `Bearer ${userAuth.access_token}` }
     };
     const [tasks, setTasks] = useState([
-      
+
     ]);
 
     const getTasks = async () => {
-        await axios.get(TASK_URL,config).then(res => {
+        await axios.get(TASK_URL, config).then(res => {
             const loadedTasks = [];
             res.data.forEach(task => {
                 loadedTasks.push({
-                    id:task.id,
-                    name:task.title,
-                    completed:task.marked_as_done
+                    id: task.id,
+                    name: task.title,
+                    completed: task.marked_as_done
                 })
             });
             setTasks(loadedTasks)
@@ -33,49 +32,48 @@ export default function TaskList({userAuth,checkAuth}) {
             })
         });
     }
-    const handleLogOut = () =>{
+    const handleLogOut = () => {
         localStorage.clear();
         checkAuth();
 
     }
+    const saveDebounce = useCallback(debounce(async (task, event) => {
+        console.log("DEBOUNCE")
+        await axios.put(`${TASK_URL}/${task.id}`, { title: event.target.value, marked_as_done: task.completed }, config).catch(err => {
+            console.log(err)
+            notification.error({
+                message: err.response.data[0].message
+            })
+        });
+    }, 1000), [])
+
     const handleNameChange = async (task, event) => {
         const newTasks = produce(tasks, draft => {
             const index = draft.findIndex(t => t.id === task.id);
             draft[index].name = event.target.value;
         });
         setTasks(newTasks);
-        saveDebounce(task,event);
-        
+        saveDebounce(task, event);
     };
 
-    const saveDebounce =  debounce(async (task,event) => {
-            console.log("DEBOUNCE")
-            await axios.put(`${TASK_URL}/${task.id}`,{title:event.target.value,marked_as_done:task.completed},config).catch(err=>{
-                console.log(err)
-                notification.error({
-                    message:err.response.data[0].message
-                })
-          });
-    },300)
-    
-    const handleCompletedChange = async(task, event) => {
+    const handleCompletedChange = async (task, event) => {
         const newTasks = produce(tasks, draft => {
             const index = draft.findIndex(t => t.id === task.id);
             draft[index].completed = event.target.checked;
         });
         setTasks(newTasks);
-        
-        await axios.put(`${TASK_URL}/${task.id}`,{title:task.title,marked_as_done:event.target.checked},config).catch(err=>{
+
+        await axios.put(`${TASK_URL}/${task.id}`, { title: task.title, marked_as_done: event.target.checked }, config).catch(err => {
             console.log(err)
             notification.error({
-                message:err.response.data[0].message
+                message: err.response.data[0].message
             })
         })
-      
+
     };
 
     const handleAddTask = async () => {
-        await axios.post(TASK_URL,{title:`New Task ${Math.floor(Math.random() * 10000)     }`,desc:""},config).then(res=>{
+        await axios.post(TASK_URL, { title: `New Task ${Math.floor(Math.random() * 10000)}`, desc: "" }, config).then(res => {
             setTasks(produce(tasks, draft => {
                 draft.push({
                     id: res.data.id,
@@ -83,34 +81,34 @@ export default function TaskList({userAuth,checkAuth}) {
                     completed: res.data.marked_as_done
                 });
             }));
-        }).catch(err=>{
+        }).catch(err => {
             notification.error({
-                message:err.response.data[0].message
+                message: err.response.data[0].message
             })
         })
 
-        
+
     };
 
-    const handleDeleteTask = async(task) => {
-        await axios.delete(`${TASK_URL}/${task.id}`,config).then(res=>{
+    const handleDeleteTask = async (task) => {
+        await axios.delete(`${TASK_URL}/${task.id}`, config).then(res => {
             notification.success({
-                message:`${task.name} deleted successfully`,
+                message: `${task.name} deleted successfully`,
             })
             setTasks(produce(tasks, draft => {
                 const index = draft.findIndex(t => t.id === task.id);
                 draft.splice(index, 1);
             }));
-        }).catch(err=>{
+        }).catch(err => {
             notification.error({
-                message:err.response.data[0]
+                message: err.response.data[0]
             })
         })
     };
 
     useEffect(() => {
         getTasks()
-    },[])
+    }, [])
     return (
         <Row type="flex" justify="center" style={{ minHeight: '100vh', marginTop: '6rem' }}>
             <Col span={12}>
